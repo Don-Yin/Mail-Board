@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="email-list">
+        <div class="card">
+            <h3>Navigation</h3>
+            <div class="email-id">
+                ID: {{ email.message_id }}
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: {{ (index / total * 100)|round }}%"></div>
+            </div>
+            <p style="text-align: center; margin: 0.5rem 0;">Viewing {{ index }} of {{ total }}</p>
+            <div class="nav-buttons">
+                <a href="{{ url_for('prev_email') }}" class="btn">Previous</a>
+                <a href="{{ url_for('next_email') }}" class="btn">Next</a>
+            </div>
+            <div class="outlook-button">
+                <a href="#" onclick="openInOutlook()" class="btn btn-outlook">
+                    <i class="fas fa-external-link-alt"></i> Open in Outlook
+                </a>
+            </div>
+            <div class="outlook-button mt-4">
+                <a href="{{ url_for('index') }}" class="btn btn-outlook">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="email-content" id="resizable-content">
+            <div class="card email-card">
+                <div class="email-header">
+                    <div class="email-header-section">
+                        <div class="email-header-row">
+                            <div class="email-header-label">
+                                <span class="status-dot"></span>
+                                Subject:
+                            </div>
+                            <div class="email-header-value {% if email.unread %}unread{% endif %}">{{ email.subject }}</div>
+                        </div>
+                    </div>
+
+                    <div class="email-header-section">
+                        <div class="email-header-row">
+                            <div class="email-header-label">
+                                <span class="status-dot"></span>
+                                From:
+                            </div>
+                            <div class="email-participant">
+                                <span class="sender-info" id="sender-info">{{ email.sender }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if email.cc %}
+                    <div class="email-header-section">
+                        <div class="email-header-row">
+                            <div class="email-header-label">
+                                <span class="status-dot"></span>
+                                CC:
+                            </div>
+                            <div class="email-participant">
+                                <span class="cc-count">{{ email.cc|length }} recipient{% if email.cc|length != 1 %}s{% endif %}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="email-header-section">
+                        <div class="email-header-row">
+                            <div class="email-header-label">
+                                <span class="status-dot"></span>
+                                Date:
+                            </div>
+                            <div class="email-header-value">
+                                {{ email.date.strftime('%Y-%m-%d %H:%M') }}
+                                <span id="time-since" class="time-since"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="email-body">
+                    {{ email.content|safe }}
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="dashboard-section card">
+                <h3>Cost Analysis</h3>
+                <div class="cost-item">
+                    <div class="cost-header">
+                        <span class="cost-label">Model</span>
+                        <span id="model-name" class="cost-value model-name">Loading...</span>
+                    </div>
+                </div>
+                <div class="cost-item">
+                    <div class="cost-header">
+                        <span class="cost-label">Total Cost</span>
+                        <span id="total-cost" class="cost-value">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-section card">
+                <h3>Priority Analysis</h3>
+                <div class="analysis-item">
+                    <div class="analysis-header">
+                        <span class="analysis-label">Compulsory</span>
+                        <span id="compulsory-indicator" class="compulsory-indicator compulsory-widget">
+                            Loading...
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="analysis-item">
+                    <div class="analysis-header">
+                        <span class="analysis-label">Opportunity Score</span>
+                    </div>
+                    <div class="score-container">
+                        <span id="opportunity-score" class="score">Loading...</span>
+                        <div class="progress-container">
+                            <div id="opportunity-progress-bar" class="progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analysis-item">
+                    <div class="analysis-header">
+                        <span class="analysis-label">Potential Harm if Ignored</span>
+                    </div>
+                    <div class="score-container">
+                        <span id="harm-score" class="score harm-score">Loading...</span>
+                        <div class="progress-container">
+                            <div id="harm-progress-bar" class="progress-bar danger"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-section card">
+                <h3>Sender's Intention</h3>
+                <p id="intention-text" class="intention-text">Loading...</p>
+            </div>
+
+            <div class="dashboard-section card">
+                <h3>Recommended Actions</h3>
+                <ul id="action-list" class="action-list">
+                    <li class="action-item">Loading...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: var(--accent);
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+
+    .email-card {
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .dashboard-section {
+        margin-bottom: 1rem;
+    }
+
+    .analysis-item {
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .analysis-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+
+    .analysis-label {
+        font-weight: 500;
+        color: var(--text-secondary);
+    }
+
+    .intention-text {
+        font-style: italic;
+        color: var(--text-secondary);
+    }
+
+    .action-list {
+        margin: 0;
+        padding: 0;
+    }
+
+    .action-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .action-item:last-child {
+        border-bottom: none;
+    }
+
+    .action-bullet {
+        color: var(--accent);
+        margin-right: 0.5rem;
+    }
+
+    .context-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .context-item:last-child {
+        border-bottom: none;
+    }
+
+    .context-label {
+        font-weight: 500;
+    }
+
+    .priority-high {
+        color: var(--danger);
+    }
+
+    .priority-medium {
+        color: var(--accent);
+    }
+
+    .priority-low {
+        color: var(--text-secondary);
+    }
+
+    .btn-outlook {
+        width: 100%;
+        margin-top: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    #resizable-content {
+        min-width: 400px;
+    }
+
+    .harm-score {
+        color: var(--danger);
+    }
+
+    /* Add styles for the time counter */
+    .time-since {
+        display: inline-block;
+        background-color: #2d2d2d;  /* Same shade as compulsory-no */
+        color: var(--text-secondary);
+        padding: 0.25rem 0.5rem;
+        margin-left: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .cc-count {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .sender-name {
+        background-color: #2b4c7a;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        margin-right: 0.5rem;
+    }
+
+    .sender-email {
+        background-color: #1e3655;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .email-header-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem 0;
+    }
+
+    .email-header-label {
+        min-width: 80px;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+
+    .email-header-value, .email-participant {
+        flex: 1;
+    }
+
+    .cost-item {
+        margin-bottom: 1rem;
+    }
+
+    .cost-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .cost-label {
+        font-weight: 500;
+    }
+
+    .cost-value {
+        color: var(--accent);
+        font-family: monospace;
+    }
+
+    .model-name {
+        font-size: 0.75rem;
+        color: #888;
+        font-family: monospace;
+        word-break: break-all;
+        line-height: 1.2;
+    }
+
+    .cost-value.model-name {
+        font-size: 0.75rem;
+        max-width: 200px;
+        overflow-wrap: break-word;
+    }
+
+    .analysis-section {
+        padding: 20px;
+        background: #2a2a2a;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+
+    .model-info {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #3a3a3a;
+    }
+
+    .model-label {
+        color: #888;
+        font-size: 0.9em;
+        margin-right: 8px;
+    }
+
+    .model-name {
+        color: #b8b8b8;
+        font-family: monospace;
+    }
+
+    .score-container {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        width: 100%;
+        margin-top: 0.25rem;
+    }
+
+    .score {
+        color: var(--accent);
+        font-weight: 500;
+        font-size: 0.9rem;
+        text-align: left;
+    }
+
+    .main-content {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .email-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .dashboard {
+        flex: 0 0 300px;
+        min-width: 300px;
+    }
+
+    /* Add progress bar styles */
+    .progress-container {
+        width: 100%;
+        height: 6px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 4px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background-color: var(--accent);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+
+    .progress-bar.danger {
+        background-color: var(--danger);
+    }
+
+    .harm-score {
+        color: var(--danger);
+    }
+
+    .compulsory-indicator {
+        margin-left: 0.5rem;
+    }
+
+    .compulsory-widget {
+        padding: 0.15rem 0.35rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+
+    .compulsory-indicator.priority-high {
+        background-color: var(--danger);
+        color: white;
+    }
+
+    .compulsory-indicator.priority-low {
+        background-color: #2d2d2d;
+        color: var(--text-secondary);
+    }
+</style>
+
+<script>
+    const emailDate = new Date("{{ email_date_iso }}");
+
+    function updateTimeSince() {
+        const now = new Date();
+        const diffMs = now - emailDate;
+
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const diffHrs = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+        const diffMins = Math.floor((diffMs / (1000 * 60)) % 60);
+        const diffSecs = Math.floor((diffMs / 1000) % 60);
+
+        let timeSinceText = '';
+
+        if (diffDays > 0) {
+            timeSinceText += diffDays + 'd ';
+        }
+        if (diffHrs > 0 || diffDays > 0) {
+            timeSinceText += diffHrs + 'h ';
+        }
+        if (diffMins > 0 || diffHrs > 0 || diffDays > 0) {
+            timeSinceText += diffMins + 'm ';
+        }
+        timeSinceText += diffSecs + 's ago';
+
+        document.getElementById('time-since').textContent = timeSinceText;
+    }
+
+    function formatSenderInfo() {
+        const senderElement = document.getElementById('sender-info');
+        const senderText = senderElement.textContent;
+        
+        // Match pattern like {k.name: 'Name', k.address: 'email@example.com', k.type: k.unresolved_address}
+        const nameMatch = senderText.match(/k\.name: '([^']+)'/);
+        const emailMatch = senderText.match(/k\.address: '([^']+)'/);
+        
+        if (nameMatch && emailMatch) {
+            const name = nameMatch[1];
+            const email = emailMatch[1];
+            senderElement.innerHTML = `<span class="sender-name">${name}</span><span class="sender-email">${email}</span>`;
+        }
+    }
+
+    function updateAnalysis() {
+        const emailId = document.querySelector('.email-id').textContent.split(': ')[1].trim();
+        console.log('Fetching analysis for email ID:', emailId);  // Add logging
+        
+        fetch(`/email_analysis/${emailId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Received analysis data:', data);  // Add logging
+                if (data.success) {
+                    const analysis = data.analysis;
+                    
+                    // Update model name and cost
+                    document.getElementById('model-name').textContent = 
+                        analysis.costs.model_name || 'Unknown';
+                    document.getElementById('total-cost').textContent = 
+                        `$${analysis.costs.total.toFixed(4)}`;
+                    
+                    // Update compulsory status
+                    const compulsoryIndicator = document.getElementById('compulsory-indicator');
+                    if (compulsoryIndicator) {
+                        compulsoryIndicator.textContent = analysis.is_compulsory ? 'Yes' : 'No';
+                        compulsoryIndicator.className = 
+                            `compulsory-indicator ${analysis.is_compulsory ? 'priority-high' : 'priority-low'}`;
+                    }
+                    
+                    // Update opportunity score
+                    const opportunityScore = document.getElementById('opportunity-score');
+                    const opportunityBar = document.getElementById('opportunity-progress-bar');
+                    if (opportunityScore && opportunityBar) {
+                        opportunityScore.textContent = `${analysis.opportunity_score.toFixed(1)}/10`;
+                        opportunityBar.style.width = `${analysis.opportunity_score * 10}%`;
+                    }
+                    
+                    // Update harm score
+                    const harmScore = document.getElementById('harm-score');
+                    const harmBar = document.getElementById('harm-progress-bar');
+                    if (harmScore && harmBar) {
+                        harmScore.textContent = `${analysis.harm_score.toFixed(1)}/10`;
+                        harmBar.style.width = `${analysis.harm_score * 10}%`;
+                    }
+                    
+                    // Update intention
+                    const intentionText = document.getElementById('intention-text');
+                    if (intentionText) {
+                        intentionText.textContent = analysis.sender_intention;
+                    }
+                    
+                    // Update actions list
+                    const actionList = document.getElementById('action-list');
+                    if (actionList) {
+                        actionList.innerHTML = ''; // Clear loading state
+                        
+                        // Split the actions string by newlines and create list items
+                        const actions = analysis.recommended_actions.split('\n');
+                        actions.forEach(action => {
+                            if (action.trim()) {  // Only add non-empty actions
+                                const li = document.createElement('li');
+                                li.className = 'action-item';
+                                li.innerHTML = `<span class="action-bullet">•</span>${action.trim()}`;
+                                actionList.appendChild(li);
+                            }
+                        });
+                    }
+                } else {
+                    console.error('Analysis failed:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching analysis:', error);
+                document.getElementById('model-name').textContent = 'Error loading...';
+                document.getElementById('total-cost').textContent = 'Error loading...';
+                document.getElementById('compulsory-indicator').textContent = 'Error loading...';
+                document.getElementById('opportunity-score').textContent = 'Error loading...';
+                document.getElementById('harm-score').textContent = 'Error loading...';
+                document.getElementById('intention-text').textContent = 'Error loading...';
+                document.getElementById('action-list').innerHTML = '<li class="action-item">Error loading...</li>';
+            });
+    }
+
+    function openInOutlook() {
+        fetch('/open_in_outlook')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('Error opening in Outlook:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        formatSenderInfo();
+        updateTimeSince();
+        setInterval(updateTimeSince, 1000);
+        updateAnalysis();
+    });
+</script>
+{% endblock %}

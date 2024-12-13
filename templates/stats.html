@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="stats-dashboard px-4">
+        <!-- Back Button -->
+        <a href="/" class="btn btn-link text-decoration-none position-absolute" style="top: 40px; left: 40px;">
+            <i class="fas fa-arrow-left fa-lg"></i>
+        </a>
+        
+        <!-- Time Range Selector -->
+        <div class="d-flex justify-content-end mb-5" style="margin-top: 80px;">
+            <select class="form-select form-select-dark">
+                <option value="week">Last Week</option>
+                <option value="month" selected>Last Month</option>
+                <option value="year">Last Year</option>
+            </select>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid mb-5">
+            <div class="stats-card">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-paper-plane me-2 text-primary"></i>
+                                Sent Emails
+                            </h5>
+                            <span class="badge bg-primary">Daily</span>
+                        </div>
+                        <div class="placeholder-chart rounded"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-inbox me-2 text-success"></i>
+                                Received Emails
+                            </h5>
+                            <span class="badge bg-success">Daily</span>
+                        </div>
+                        <div class="placeholder-chart rounded"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Improved styles for stats page */
+.stats-dashboard {
+    margin: 0 auto;
+    padding: 40px;
+    position: relative;
+}
+
+.stats-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3rem;
+    padding: 1rem 0;
+}
+
+.stats-card {
+    flex: 1;
+    min-width: 300px;  /* Minimum width before wrapping */
+    max-width: calc(50% - 1.5rem);  /* Prevent cards from getting too wide */
+}
+
+.stats-card .card {
+    height: 100%;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.stats-card .card:hover {
+    transform: translateY(-3px);
+}
+
+.placeholder-chart {
+    position: relative;
+    overflow: hidden;
+    height: calc(100% - 4rem);
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.placeholder-chart::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.1) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255,255,255,0.1) 50%,
+        rgba(255,255,255,0.1) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 50px 50px;
+    animation: placeholderAnimation 2s linear infinite;
+}
+
+@keyframes placeholderAnimation {
+    from { transform: translateX(0) translateY(0); }
+    to { transform: translateX(50px) translateY(50px); }
+}
+
+.stats-card:hover .placeholder-chart::after {
+    animation-play-state: paused;
+}
+
+@media (max-width: 768px) {
+    .stats-card {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+    
+    .stats-grid {
+        gap: 2rem;
+    }
+}
+
+/* Replace the existing form-select-dark styles with these */
+.form-select-dark {
+    width: 150px;
+    height: 40px;
+    background-color: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    padding: 0 35px 0 15px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 12px;
+    cursor: pointer;
+}
+
+.form-select-dark:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
+}
+
+.form-select-dark option {
+    background-color: #1a1a1a;
+    color: #fff;
+    padding: 10px;
+}
+
+.form-select-dark:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #363636;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --accent: #4a9eff;
+            --accent-hover: #3a7fd9;
+            --border: #404040;
+            --danger: #ff4a4a;
+            --success: #4aff4a;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Force all elements to inherit color */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            color: inherit;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Override any inline styles */
+        [style*="color"] {
+            color: inherit !important;
+        }
+
+        /* Reset body margin and padding */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Force email content to inherit colors */
+        .email-body {
+            color: var(--text-primary) !important;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .email-body * {
+            color: inherit !important;
+            background-color: transparent !important;
+            max-width: 100%;
+        }
+
+        /* Handle signature banners and other potential background elements */
+        [style*="background"], 
+        [bgcolor],
+        table,
+        td,
+        th,
+        div[class*="signature"],
+        div[class*="banner"],
+        span[class*="signature"],
+        span[class*="banner"] {
+            background-color: var(--bg-secondary) !important;
+        }
+
+        /* Handle images with background */
+        img {
+            background-color: transparent !important;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Ensure tables in email content are properly styled */
+        table {
+            border-color: var(--border) !important;
+            margin: 1rem 0;
+        }
+
+        td, th {
+            border-color: var(--border) !important;
+            padding: 0.5rem;
+        }
+
+        /* Specific overrides for common elements that might come in emails */
+        p, span, div, h1, h2, h3, h4, h5, h6, 
+        li, td, th, strong, em, blockquote {
+            color: inherit !important;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin: 0.5rem 0;
+            font-weight: 600;
+        }
+
+        /* Keep specific colors for interactive elements */
+        .btn {
+            background-color: var(--accent);
+            color: white !important;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+            text-decoration: none;
+        }
+
+        a:not(.btn) {
+            color: var(--accent) !important;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        a:not(.btn):hover {
+            color: var(--accent-hover) !important;
+            text-decoration: underline;
+        }
+
+        .score {
+            color: var(--accent) !important;
+            font-weight: 500;
+        }
+
+        .metadata {
+            color: var(--text-secondary) !important;
+            font-size: 0.9rem;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .email-list {
+            flex: 0 0 auto;
+            width: 250px;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            min-width: 250px;
+        }
+
+        .email-list h3 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .main-content {
+            flex: 1 1 auto;
+            display: flex;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .email-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            position: relative;
+            min-width: 0;
+        }
+
+        .dashboard {
+            flex: 0 0 auto;
+            width: 250px;
+            background-color: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            padding: 1rem;
+            overflow-y: auto;
+            min-width: 250px;
+        }
+
+        .card {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .email-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+            background-color: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .email-header-section {
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .email-header-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .email-header-label {
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .email-header-value {
+            font-weight: 500;
+        }
+
+        .email-participant {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .participant-name {
+            font-weight: 500;
+        }
+
+        .participant-address {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .unread {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .nav-buttons .btn {
+            flex: 1;
+            text-align: center;
+        }
+
+        .compulsory-indicator {
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .compulsory-yes {
+            background-color: rgba(255, 74, 74, 0.2);
+            color: var(--danger) !important;
+        }
+
+        .compulsory-no {
+            background-color: rgba(176, 176, 176, 0.2);
+            color: var(--text-secondary) !important;
+        }
+
+        .progress-container {
+            margin-top: 0.5rem;
+            background-color: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+            height: 4px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar.danger {
+            background-color: var(--danger);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Resizer styling */
+        .email-content::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: var(--border);
+            cursor: ew-resize;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .email-content:hover::after {
+            opacity: 1;
+        }
+
+        /* Keep list items inside their container */
+        .email-body {
+            overflow-x: hidden;
+            padding: 1rem;
+        }
+
+        .email-body ul, 
+        .email-body ol {
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+            list-style-position: inside;
+        }
+
+        /* Email ID display */
+        .email-id {
+            font-family: monospace;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background-color: var(--bg-primary);
+            border-radius: 4px;
+            word-break: break-all;
+        }
+
+        /* Email card should take full width */
+        .email-card {
+            flex: 1;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html> 
