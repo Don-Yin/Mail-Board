@@ -1,7 +1,7 @@
 # Mail-Board
 [English Version](README.md)
 
-这是一个邮件统计查看器和内容分析器。
+这是一个邮件统计查看器和内容分析器。统计Outlook邮件数据。
 
 ## 主导航
 首先是这个导航页面：
