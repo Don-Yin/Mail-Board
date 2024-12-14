@@ -24,7 +24,7 @@ clicking on analysis, you will see:
 ## Stats Dashboard
 clicking on stats, you will see:
 ![Statistics Interface](public/stats.png)
-- sent/Received email trends
+- sent/received email trends
 - daily averages and totals
 - folder breakdown visualization
 - email category distribution
