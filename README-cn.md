@@ -45,7 +45,8 @@
 5. 在弹出窗口中允许访问的 Outlook 客户端
 
 ## 下一步
-- 马上就整一个 requirement.txt
+- [] 汉化
+- [] 马上就整一个 requirement.txt
 
 ## 许可证
 本项目根据包含的 LICENSE 文件授权。
