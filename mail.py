@@ -10,6 +10,8 @@ from typing import Dict, List, Optional
 from appscript import app as appscript_app
 from flask import Flask, render_template, redirect, url_for, jsonify
 import hashlib, yaml, threading
+from pathlib import Path
+import os
 
 from src.analytics.fields import analyze_priority, analyze_actions, analyze_intention, field
 
@@ -42,7 +44,8 @@ class EmailMessage:
 
 
 # Load user background from configurations file
-with open("configurations.yaml", "r") as f:
+config_path = Path(__file__).parent / "configurations.yaml"
+with open(config_path, "r") as f:
     configurations = yaml.safe_load(f)
     USER_BACKGROUND = configurations["USER_BACKGROUND"]
 
@@ -318,4 +321,21 @@ def email_analysis(message_id):
 
 
 if __name__ == "__main__":
+    import requests
+    import webbrowser
+
+    def chrome_has_url_open(target_url, debug_port=9222):
+        try:
+            tabs = requests.get(f"http://127.0.0.1:{debug_port}/json").json()
+            for t in tabs:
+                if t.get("url") == target_url:
+                    return True
+        except:
+            pass
+        return False
+
+    target = "http://127.0.0.1:5001"
+    if not chrome_has_url_open(target):
+        webbrowser.open(target)
+
     app.run(debug=True, host="0.0.0.0", port=5001)

@@ -163,7 +163,8 @@ def analyze_actions(user_background: str, content_email: str, email_id: str) -> 
     prompt = f"""Given this user background: {user_background}
     And this email content: {content_email}
     
-    Recommend specific action steps to handle the situation.
+    First of all determine whether the email explicitly asks for a confirmation or response.
+    And recommend specific action steps to handle the situation.
     Return a dictionary with key 'actions' containing a newline-separated string of actions.
     Be specific and practical.
 
