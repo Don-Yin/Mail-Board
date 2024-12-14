@@ -120,6 +120,86 @@ class OutlookMailbox:
         print(f"Retrieved {len(email_list)} emails.")
         return email_list
 
+    def get_all_folders(self):
+        """Recursively get all mail folders in Outlook."""
+        try:
+            return self.outlook.mail_folders.get()
+        except Exception as e:
+            print(f"Error getting folders: {str(e)}")
+            return []
+
+    def get_folder_statistics(self, timeframe_days: int = 30) -> Dict[str, Dict[str, int]]:
+        """Get email statistics for all folders within the specified timeframe."""
+        from datetime import timedelta
+        cutoff_date = datetime.now() - timedelta(days=timeframe_days)
+        
+        stats = {
+            "received": {
+                "total": 0,
+                "unread": 0,
+                "daily": [0] * timeframe_days
+            },
+            "sent": {
+                "total": 0,
+                "daily": [0] * timeframe_days
+            },
+            "by_folder": {}
+        }
+        
+        try:
+            # Get received emails statistics
+            folders = self.get_all_folders()
+            for folder in folders:
+                folder_name = str(folder.name.get())
+                messages = folder.messages.get()
+                
+                if folder_name == "Sent Items":
+                    for msg in messages:
+                        try:
+                            sent_time = msg.time_sent.get()
+                            if isinstance(sent_time, datetime) and sent_time >= cutoff_date:
+                                # Calculate days ago for daily stats
+                                days_ago = (datetime.now() - sent_time).days
+                                if 0 <= days_ago < timeframe_days:
+                                    stats["sent"]["daily"][days_ago] += 1
+                                    stats["sent"]["total"] += 1  # Increment total based on daily counts
+                        except Exception as e:
+                            print(f"Error processing sent message: {str(e)}")
+                else:
+                    for msg in messages:
+                        try:
+                            received_time = msg.time_received.get()
+                            if isinstance(received_time, datetime) and received_time >= cutoff_date:
+                                # Calculate days ago for daily stats
+                                days_ago = (datetime.now() - received_time).days
+                                if 0 <= days_ago < timeframe_days:
+                                    stats["received"]["daily"][days_ago] += 1
+                                    stats["received"]["total"] += 1  # Increment total based on daily counts
+                                    
+                                    if not (msg.is_read.get() if hasattr(msg.is_read, "get") else msg.was_read.get()):
+                                        stats["received"]["unread"] += 1
+                                        
+                                    # Add to folder stats
+                                    if folder_name not in stats["by_folder"]:
+                                        stats["by_folder"][folder_name] = {"total": 0, "unread": 0}
+                                    stats["by_folder"][folder_name]["total"] += 1
+                                    if not (msg.is_read.get() if hasattr(msg.is_read, "get") else msg.was_read.get()):
+                                        stats["by_folder"][folder_name]["unread"] += 1
+                        except Exception as e:
+                            print(f"Error processing received message: {str(e)}")
+            
+            # Remove folders with no messages in the timeframe
+            stats["by_folder"] = {k: v for k, v in stats["by_folder"].items() if v["total"] > 0}
+            
+            # Reverse daily arrays so they go from oldest to newest
+            stats["sent"]["daily"].reverse()
+            stats["received"]["daily"].reverse()
+            
+            return stats
+        except Exception as e:
+            print(f"Error getting folder statistics: {str(e)}")
+            return stats
+
 
 app = Flask(__name__)
 email_cache = {"emails": [], "current_index": 0}
@@ -137,7 +217,10 @@ def index():
 
 @app.route("/stats/")
 def stats():
-    return render_template("stats.html")
+    outlook = OutlookMailbox()
+    timeframes = [7, 30, 365]  # days
+    all_stats = {str(days): outlook.get_folder_statistics(days) for days in timeframes}
+    return render_template("stats.html", statistics=all_stats)
 
 
 @app.route("/email")
