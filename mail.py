@@ -131,28 +131,18 @@ class OutlookMailbox:
     def get_folder_statistics(self, timeframe_days: int = 30) -> Dict[str, Dict[str, int]]:
         """Get email statistics for all folders within the specified timeframe."""
         from datetime import timedelta
+
         cutoff_date = datetime.now() - timedelta(days=timeframe_days)
-        
-        stats = {
-            "received": {
-                "total": 0,
-                "unread": 0,
-                "daily": [0] * timeframe_days
-            },
-            "sent": {
-                "total": 0,
-                "daily": [0] * timeframe_days
-            },
-            "by_folder": {}
-        }
-        
+
+        stats = {"received": {"total": 0, "unread": 0, "daily": [0] * timeframe_days}, "sent": {"total": 0, "daily": [0] * timeframe_days}, "by_folder": {}}
+
         try:
             # Get received emails statistics
             folders = self.get_all_folders()
             for folder in folders:
                 folder_name = str(folder.name.get())
                 messages = folder.messages.get()
-                
+
                 if folder_name == "Sent Items":
                     for msg in messages:
                         try:
@@ -175,10 +165,10 @@ class OutlookMailbox:
                                 if 0 <= days_ago < timeframe_days:
                                     stats["received"]["daily"][days_ago] += 1
                                     stats["received"]["total"] += 1  # Increment total based on daily counts
-                                    
+
                                     if not (msg.is_read.get() if hasattr(msg.is_read, "get") else msg.was_read.get()):
                                         stats["received"]["unread"] += 1
-                                        
+
                                     # Add to folder stats
                                     if folder_name not in stats["by_folder"]:
                                         stats["by_folder"][folder_name] = {"total": 0, "unread": 0}
@@ -187,14 +177,14 @@ class OutlookMailbox:
                                         stats["by_folder"][folder_name]["unread"] += 1
                         except Exception as e:
                             print(f"Error processing received message: {str(e)}")
-            
+
             # Remove folders with no messages in the timeframe
             stats["by_folder"] = {k: v for k, v in stats["by_folder"].items() if v["total"] > 0}
-            
+
             # Reverse daily arrays so they go from oldest to newest
             stats["sent"]["daily"].reverse()
             stats["received"]["daily"].reverse()
-            
+
             return stats
         except Exception as e:
             print(f"Error getting folder statistics: {str(e)}")
@@ -320,13 +310,7 @@ def email_analysis(message_id):
             "harm": analysis.harm_cost,
             "actions": analysis.actions_cost,
             "intention": analysis.intention_cost,
-            "total": (
-                analysis.compulsory_cost +
-                analysis.opportunity_cost +
-                analysis.harm_cost +
-                analysis.actions_cost +
-                analysis.intention_cost
-            ),
+            "total": (analysis.compulsory_cost + analysis.opportunity_cost + analysis.harm_cost + analysis.actions_cost + analysis.intention_cost),
         },
     }
 

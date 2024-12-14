@@ -6,7 +6,7 @@ This is an email stats viewer and content analyser.
 
 ## Main Navigation
 I here present you a simple navigation page:
-![Main Navigation Interface](public/index.png)
+![Main Navigation Interface](public/gif.gif)
 
 ## Analysis
 clicking on analysis, you will see:
